@@ -50,7 +50,7 @@ async def update_gender(user_id: int, user: User, limit: int | None = None):
 async def update_user(
     user_id: int,
     user: User,
-    q: Annotated[str, Query(max_length=10, alias="query")] = ...,
+    q: Annotated[list[str] | None, Query(alias="query")] = None
 ):
     user_dict = user.model_dump()
     if q:
