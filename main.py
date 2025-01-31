@@ -8,7 +8,7 @@ app = FastAPI()
 
 @app.get("/")
 async def get():
-    return {"message": "Fuck Fe Fe"}
+    return {"message": "Hello World"}
 
 
 class Gender(str, Enum):
@@ -36,7 +36,7 @@ class User(BaseModel):
 
 @app.post("/user/{user_id}")
 async def update_gender(user_id: int, user: User, limit: int | None = None):
-    user_dict = user.model_dump()
+    user_dict = user.dict()
     if user_dict.get("gender") is not None:
         user_dict["gender"] = user_dict["gender"].value
     user_data = {"user_id": user_id, **user_dict}
@@ -65,9 +65,9 @@ async def update_user(
     user: User,
     q: Annotated[FilterParams, Query(title="Query")],
 ):
-    user_dict = user.model_dump()
+    user_dict = user.dict()
     if q:
-        user_dict.update(**q.model_dump())
+        user_dict.update(**q.dict())
     user_data = {"user_id": user_id, **user_dict}
 
     return user_data
