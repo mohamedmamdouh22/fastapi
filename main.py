@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, Body
 from enum import Enum
 from typing import Annotated, Literal
 from pydantic import BaseModel, Field
@@ -34,9 +34,14 @@ class User(BaseModel):
     phone_number: str
 
 
+class Class(BaseModel):
+    class_name: str
+    class_location: str
+
+
 @app.post("/user/{user_id}")
 async def update_gender(user_id: int, user: User, limit: int | None = None):
-    user_dict = user.dict()
+    user_dict = user.model_dump()
     if user_dict.get("gender") is not None:
         user_dict["gender"] = user_dict["gender"].value
     user_data = {"user_id": user_id, **user_dict}
@@ -62,12 +67,14 @@ class FilterParams(BaseModel):
 async def update_user(
     *,
     user_id: Annotated[int, Path(..., gt=0, lt=100, title="User ID")],
-    user: User,
+    user: Annotated[User, Body(..., title="User")],
+    class_body: Annotated[Class | None, Body(title="Class")] = None,
     q: Annotated[FilterParams, Query(title="Query")],
 ):
-    user_dict = user.dict()
+    user_dict = user.model_dump()
     if q:
-        user_dict.update(**q.dict())
+        user_dict.update(**q.model_dump())
     user_data = {"user_id": user_id, **user_dict}
-
+    if class_body:
+        user_data.update(**class_body.model_dump())
     return user_data
