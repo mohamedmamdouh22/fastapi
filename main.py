@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, Path, Body
 from enum import Enum
 from typing import Annotated, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 app = FastAPI()
 
@@ -26,17 +26,23 @@ async def get_gender(
     return {"user_id": user_id}
 
 
+class Photo(BaseModel):
+    url: HttpUrl
+    name: str
+
+
 class User(BaseModel):
     user_name: str
     user_age: int
     gender: Gender | None = None
     email: str
     phone_number: str
+    photos: list[Photo]
 
 
 class Class(BaseModel):
-    class_name: str
-    class_location: str
+    class_name: str | None = Field(default="Python", title="Class Name")
+    class_location: str | None = Field(default="Online", title="Class Location")
 
 
 @app.post("/user/{user_id}")
@@ -70,6 +76,7 @@ async def update_user(
     user: Annotated[User, Body(..., title="User")],
     class_body: Annotated[Class | None, Body(title="Class")] = None,
     q: Annotated[FilterParams, Query(title="Query")],
+    importance: Annotated[int, Body(title="Importance")],
 ):
     user_dict = user.model_dump()
     if q:
