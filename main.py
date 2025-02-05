@@ -85,3 +85,35 @@ async def update_user(
     if class_body:
         user_data.update(**class_body.model_dump())
     return user_data
+
+
+@app.post("/images/multiple/")
+async def create_multiple_images(images: list[Photo]):
+    return images
+
+
+# declare request example data
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "example": {
+                "name": "Foo",
+                "description": "An item",
+                "price": 19.99,
+                "tax": 1.5,
+            }
+        },
+    }
+
+
+@app.post("/items/{item_id}")
+async def read_item(
+    item_id: Annotated[int, Path(..., gt=0, title="Item ID")],
+    item: Annotated[Item, Body(..., title="Item")],
+):
+    return {"item_id": item_id, **item.model_dump()}
