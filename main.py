@@ -94,20 +94,14 @@ async def create_multiple_images(images: list[Photo]):
 
 # declare request example data
 class Item(BaseModel):
-    name: str
-    description: str | None = None
-    price: float
-    tax: float | None = None
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "name": "Foo",
-                "description": "An item",
-                "price": 19.99,
-                "tax": 1.5,
-            }
-        },
-    }
+    name: str = Field(..., title="Item Name", examples=["Item1", "Item2"])
+    description: str | None = Field(
+        None,
+        title="Item Description",
+        examples=["Item1 Description", "Item2 Description"],
+    )
+    price: float = Field(..., title="Item Price", examples=[10.5, 20.5])
+    tax: float | None = Field(None, title="Item Tax", examples=[1.5, 2.5])
 
 
 @app.post("/items/{item_id}")
