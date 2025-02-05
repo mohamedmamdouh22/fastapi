@@ -94,19 +94,52 @@ async def create_multiple_images(images: list[Photo]):
 
 # declare request example data
 class Item(BaseModel):
-    name: str = Field(..., title="Item Name", examples=["Item1", "Item2"])
-    description: str | None = Field(
-        None,
-        title="Item Description",
-        examples=["Item1 Description", "Item2 Description"],
-    )
-    price: float = Field(..., title="Item Price", examples=[10.5, 20.5])
-    tax: float | None = Field(None, title="Item Tax", examples=[1.5, 2.5])
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
 
 
 @app.post("/items/{item_id}")
 async def read_item(
     item_id: Annotated[int, Path(..., gt=0, title="Item ID")],
-    item: Annotated[Item, Body(..., title="Item")],
+    item: Annotated[
+        Item,
+        Body(
+            ...,
+            title="Item",
+            openapi_examples={
+                "normal item": {
+                    "summary": "An example of a normal item",
+                    "description": "This is an example of a normal item that should be returned",
+                    "value": {
+                        "name": "Item 1",
+                        "description": "Item 1 description",
+                        "price": 100.0,
+                        "tax": 10.0,
+                    },
+                },
+                "converted item": {
+                    "summary": "An example of a converted item",
+                    "description": "This is an example of a converted item that FastApi will convert the price from string to number",
+                    "value": {
+                        "name": "Item 2",
+                        "description": "Item 2 description",
+                        "price": "200",
+                    },
+                },
+                "invalid item": {
+                    "summary": "An example of an invalid item",
+                    "description": "This is an example of an invalid item that FastApi will raise an error",
+                    "value": {
+                        "name": "Item 3",
+                        "description": "Item 3 description",
+                        "price": "fifteen dollars",
+                        "tax": "ten dollars",
+                    },
+                },
+                },
+        ),
+    ],
 ):
     return {"item_id": item_id, **item.model_dump()}
