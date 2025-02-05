@@ -99,7 +99,6 @@ class Item(BaseModel):
     price: float
     tax: float | None = None
     model_config = {
-        "extra": "forbid",
         "json_schema_extra": {
             "example": {
                 "name": "Foo",
