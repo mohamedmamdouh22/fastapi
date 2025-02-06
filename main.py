@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Query, Path, Body
+from fastapi import FastAPI, Query, Path, Body, Cookie, Header
 from enum import Enum
+from uuid import UUID
+from datetime import datetime, timedelta, time
 from typing import Annotated, Literal
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -138,8 +140,75 @@ async def read_item(
                         "tax": "ten dollars",
                     },
                 },
-                },
+            },
         ),
     ],
 ):
     return {"item_id": item_id, **item.model_dump()}
+
+
+@app.put("/items/{item_id}")
+async def read_items(
+    item_id: UUID,
+    start_datetime: Annotated[datetime, Body()],
+    end_datetime: Annotated[datetime, Body()],
+    process_after: Annotated[timedelta, Body()],
+    repeat_at: Annotated[time | None, Body()] = None,
+):
+    start_process = start_datetime + process_after
+    duration = end_datetime - start_process
+    return {
+        "item_id": item_id,
+        "start_datetime": start_datetime,
+        "end_datetime": end_datetime,
+        "process_after": process_after,
+        "repeat_at": repeat_at,
+        "start_process": start_process,
+        "duration": duration,
+    }
+
+
+class Cookies(BaseModel):
+    Aws_token: str | None = None
+    session_id: str | None = None
+
+
+@app.get("/items/")
+async def return_items(
+    *,
+    cookies: Annotated[Cookies, Cookie()],
+    accept_encoding: str | None = Header(None, title="Accept Encoding"),
+    accept_language: str | None = Header(None, title="Accept Language"),
+    sec_ch_ua: str | None = Header(None, title="Sec Ch Ua"),
+    user_agent: str | None = Header(None, title="User Agent"),
+):
+    if cookies:
+        return {
+            **cookies.model_dump(),
+            "accept_encoding": accept_encoding,
+            "accept_language": accept_language,
+            "sec_ch_ua": sec_ch_ua,
+        }
+    return {
+        "accept_encoding": accept_encoding,
+        "accept_language": accept_language,
+        "sec_ch_ua": sec_ch_ua,
+        "user_agent": user_agent,
+    }
+
+
+class Headers(BaseModel):
+    accept_encoding: Annotated[str | None, Header()] = None
+    accept_language: Annotated[str | None, Header()] = None
+    sec_ch_ua: Annotated[str | None, Header()] = None
+    user_agent: Annotated[str | None, Header()] = None
+
+
+@app.get("/items/with-headers")
+async def return_items_with_headers(headers: Annotated[Headers, Header()]):
+    return {
+        "accept_encoding": headers.accept_encoding,
+        "accept_language": headers.accept_language,
+        "sec_ch_ua": headers.sec_ch_ua,
+        "user_agent": headers.user_agent,
+    }
