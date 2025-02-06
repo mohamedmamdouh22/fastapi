@@ -169,8 +169,8 @@ async def read_items(
 
 
 class Cookies(BaseModel):
-    Aws_token: str | None = None
-    session_id: str | None = None
+    Aws_token: Annotated[str | None, Cookie()] = None
+    session_id: Annotated[str | None, Cookie()] = None
 
 
 @app.get("/items/")
@@ -184,7 +184,8 @@ async def return_items(
 ):
     if cookies:
         return {
-            **cookies.model_dump(),
+            "Aws_token": cookies.Aws_token,
+            "session_id": cookies.session_id,
             "accept_encoding": accept_encoding,
             "accept_language": accept_language,
             "sec_ch_ua": sec_ch_ua,
