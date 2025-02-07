@@ -199,17 +199,11 @@ async def return_items(
 
 
 class Headers(BaseModel):
-    accept_encoding: Annotated[str | None, Header()] = None
-    accept_language: Annotated[str | None, Header()] = None
-    sec_ch_ua: Annotated[str | None, Header()] = None
-    user_agent: Annotated[str | None, Header()] = None
-
+    accept_encoding: str | None = None
+    accept_language: str | None = None
+    sec_ch_ua: str | None = None
+    user_agent: str | None = None
 
 @app.get("/items/with-headers")
 async def return_items_with_headers(headers: Annotated[Headers, Header()]):
-    return {
-        "accept_encoding": headers.accept_encoding,
-        "accept_language": headers.accept_language,
-        "sec_ch_ua": headers.sec_ch_ua,
-        "user_agent": headers.user_agent,
-    }
+    return headers.model_dump()
