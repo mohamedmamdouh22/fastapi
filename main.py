@@ -1,8 +1,20 @@
-from fastapi import FastAPI, Query, Path, Body, Cookie, Header, status
+from fastapi import (
+    FastAPI,
+    Query,
+    Path,
+    Body,
+    Cookie,
+    Header,
+    status,
+    Form,
+    File,
+    UploadFile,
+)
+from fastapi.responses import HTMLResponse
 from enum import Enum
 from uuid import UUID
 from datetime import datetime, timedelta, time
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Union
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 
 app = FastAPI()
@@ -220,8 +232,27 @@ class UserIn(BaseUser):
     password: str
 
 
-# @app.post("/users/", response_model=UserIn, response_model_exclude={"password"})
-@app.post("/users/", response_model=BaseUser)
+class UserOut(BaseUser):
+    pass
+
+
+class UserInDB(BaseUser):
+    hashed_password: str
+
+
+def fake_password_hasher(password: str):
+    return "supersecret" + password
+
+
+def user_hasher(user_in: UserIn) -> BaseUser:
+    print("user_saved")
+    user = UserInDB(
+        **user_in.model_dump(), hashed_password=fake_password_hasher(user_in.password)
+    )
+    return user
+
+
+@app.post("/users/", response_model=UserOut)
 async def create_user(
     user_in: Annotated[
         UserIn,
@@ -236,4 +267,92 @@ async def create_user(
         ),
     ],
 ):
-    return user_in
+    return user_hasher(user_in)
+
+
+class BaseItem(BaseModel):
+    description: str
+    type: str
+
+
+class CarItem(BaseItem):
+    type: str = "car"
+
+
+class PlaneItem(BaseItem):
+    type: str = "plane"
+    size: int
+
+
+class BusItem(BaseItem):
+    type: str = "bus"
+    size: int
+    seats: int
+
+
+items = {
+    "item1": {"description": "All my friends drive a low rider", "type": "car"},
+    "item2": {
+        "description": "Music is my aeroplane, it's my aeroplane",
+        "type": "plane",
+        "size": 5,
+    },
+    "item3": {
+        "description": "I'm on a bus",
+        "type": "bus",
+        "size": 5,
+        "seats": 20,
+    },
+}
+
+
+@app.get("/items/{item_id}", response_model=Union[CarItem, PlaneItem, BusItem])
+async def read_item(item_id: Literal["item1", "item2", "item3"]):
+    return items[item_id]
+
+
+class FormData(BaseModel):
+    username: str
+    password: str
+    model_config = {"extra": "forbid"}
+
+
+@app.post("/login/")
+async def login(form_data: Annotated[FormData, Form(...)]):
+    results = {**form_data.model_dump()}
+    return results
+
+
+@app.post("/upload/")
+async def upload_bytes_file(files: Annotated[list[bytes], File(...)]):
+    return [{"file_len": len(file)} for file in files]
+
+
+@app.post("/upload-file/")
+async def upload_file(files: Annotated[list[UploadFile], File(...)]):
+    return [
+        {
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "size": file.size,
+            "headers": file.headers,
+        }
+        for file in files
+    ]
+
+
+# @app.get("/")
+# async def main():
+#     content = """
+# <body>
+# <form action="/upload/" enctype="multipart/form-data" method="post">
+# <input name="files" type="file" multiple>
+# <input type="submit">
+# </form>
+# <form action="/upload-file/" enctype="multipart/form-data" method="post">
+# <input name="files" type="file" multiple>
+# <input type="submit">
+# </form>
+# </body>
+#     """
+#     return HTMLResponse(content=content)
