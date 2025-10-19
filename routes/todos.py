@@ -22,3 +22,9 @@ db_session = Depends(get_db)
 async def read_allTodos(db: Session = db_session):
     todos = db.query(Todos).all()
     return todos
+
+
+@router.get("/todos/{todo_id}")
+async def read_todo(todo_id: int, db: Session = db_session):
+    todo = db.query(Todos).filter(Todos.id == todo_id).first()
+    return todo
